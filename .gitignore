@@ -2,3 +2,4 @@
 *.swo
 __pycache__/
 .venv
+export-auth-env.sh
