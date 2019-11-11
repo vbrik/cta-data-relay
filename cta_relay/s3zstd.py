@@ -8,6 +8,8 @@ from subprocess import run, PIPE
 import time
 import threading
 from functools import partial
+import hashlib
+from functools import partial
 
 class ProgressMeter(object):
     # To simplify, assume this is hooked up to a single operation
@@ -81,8 +83,6 @@ class ProgressMeter(object):
                 self._last_update_count = self._count
 
 def _md5sum(filename):
-    import hashlib
-    from functools import partial
     with open(filename, mode='rb') as f:
         d = hashlib.md5()
         for buf in iter(partial(f.read, 2**20), b''):
@@ -92,8 +92,8 @@ def _md5sum(filename):
 def zdownload(obj, tempdir, threads, dry_run):
     zstd_path = os.path.join(tempdir, obj.key + '.zst')
     obj.download_file(zstd_path, Callback=ProgressMeter(zstd_path, obj.content_length))
-    run(['zstd', '--force', '--decompress', '--rm', '--threads=%s' % threads, zstd_path],
-                                        check=True, stdout=sys.stdout, stderr=PIPE)
+    run(['nice', '-n', '19', 'zstd', '--force', '--decompress', '--rm', '--threads=%s' % threads,
+                                            zstd_path], check=True, stdout=sys.stdout, stderr=PIPE)
 
 def zupload(bucket, file_info, tempdir, threads, tx_config, dry_run=False):
     uploaded_files = set(o.key for o in bucket.objects.all())
