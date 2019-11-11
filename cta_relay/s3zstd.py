@@ -1,20 +1,12 @@
-#!/usr/bin/env python
 import sys
 from pprint import pprint
 import boto3
 from boto3.s3.transfer import TransferConfig
 import os
 from os.path import basename
-from subprocess import run, PIPE, CalledProcessError
+from subprocess import run, PIPE
 import time
 import threading
-try:
-    import gfal2
-except ModuleNotFoundError:
-    gfal2 = None
-from multiprocessing.pool import ThreadPool, Pool
-from itertools import repeat
-import signal
 from functools import partial
 
 class ProgressMeter(object):
@@ -45,8 +37,8 @@ class ProgressMeter(object):
     def __readable_time(self, time):
         time = int(round(time))
         seconds = time % 60
-        minutes = time // 60 % 60
-        hours = time // 60*60
+        minutes = (time // 60) % 60
+        hours = time // (60 * 60)
         if hours:
             return f'{hours}h {minutes}m {seconds}s'
         elif minutes:
@@ -82,13 +74,13 @@ class ProgressMeter(object):
                 sys.stdout.write(
                         f'{self._label: <20} {rt(t_observed)}  '
                         f'{rs(self._count): >10} / {rs(self._size)} {percent: 3.0f}%  '
-                        f'inst = {rs(update_rate)}/s  avg={rs(average_rate)}/s  '
+                        f'{rs(update_rate)}/s {rs(average_rate)}/s  '
                         f'ETA: {rt(t_remaining)}\n')
                 sys.stdout.flush()
                 self._last_update_time = now
                 self._last_update_count = self._count
 
-def md5sum(filename):
+def _md5sum(filename):
     import hashlib
     from functools import partial
     with open(filename, mode='rb') as f:
@@ -97,26 +89,15 @@ def md5sum(filename):
             d.update(buf)
     return d.hexdigest()
 
-def download(obj, tempdir, threads, dry_run):
+def zdownload(obj, tempdir, threads, dry_run):
     zstd_path = os.path.join(tempdir, obj.key + '.zst')
     obj.download_file(zstd_path, Callback=ProgressMeter(zstd_path, obj.content_length))
-    run(['zstd', '--force', '--decompress', '--threads=%s' % threads, zstd_path],
+    run(['zstd', '--force', '--decompress', '--rm', '--threads=%s' % threads, zstd_path],
                                         check=True, stdout=sys.stdout, stderr=PIPE)
-    os.remove(zstd_path)
-    if not dry_run:
-        obj.put(Metadata=obj.metadata) # empty object body
 
-def upload(bucket, src_path, tempdir, threads, tx_config, dry_run=False):
+def zupload(bucket, file_info, tempdir, threads, tx_config, dry_run=False):
     uploaded_files = set(o.key for o in bucket.objects.all())
-    if os.path.isfile(src_path):
-        if basename(src_path) not in uploaded_files:
-            unuploaded_files = [(src_path, os.path.getsize(src_path))]
-        else:
-            unuploaded_files = []
-    else:
-        unuploaded_files = [(de.path, de.stat().st_size, de.stat().st_mtime)
-                                for de in os.scandir(src_path)
-                                    if de.is_file() and basename(de.path) not in uploaded_files]
+    unuploaded_files = [(p,s,m) for p,s,m in file_info if basename(p) not in uploaded_files]
     print('Uploaded:', len(uploaded_files))
     print('Un-uploaded:', len(unuploaded_files),
             sum(size for name,size,mtime in unuploaded_files)/10**9, 'GB')
@@ -126,7 +107,7 @@ def upload(bucket, src_path, tempdir, threads, tx_config, dry_run=False):
         zstd_path = os.path.join(tempdir, basename(path) + '.zst')
         run(['nice', '-n', '19', 'zstd', '--force', '--threads=%s' % threads, path, '-o', zstd_path],
                                             check=True, stdout=PIPE, stderr=PIPE)
-        md5 = md5sum(path)
+        md5 = _md5sum(path)
         bucket.upload_file(zstd_path, basename(path), Config=tx_config,
                 Callback=ProgressMeter(zstd_path, os.path.getsize(zstd_path)),
                 ExtraArgs={'Metadata': {'size': str(size), 'mtime': str(mtime), 'md5':md5}})

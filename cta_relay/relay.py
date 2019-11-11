@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 from pprint import pprint
 import os
 
 from cta_relay import s3 
+from cta_relay import gridftp
 
 def transit(bucket, gridftp_url, gridftp_path, tempdir, compr_threads, obj, dry_run):
     if obj is None:
@@ -17,4 +17,7 @@ def transit(bucket, gridftp_url, gridftp_path, tempdir, compr_threads, obj, dry_
         s3.download(obj, tempdir, compr_threads, dry_run)
         src_url = 'file://' + os.path.join(tempdir, obj.key)
         dst_url = gridftp_url + os.path.join(gridftp_path, obj.key)
-        #gridftp.copy(src_url, dst_url)
+        gridftp.copy(src_url, dst_url)
+        if not dry_run:
+            obj.put(Metadata=obj.metadata) # empty object body
+

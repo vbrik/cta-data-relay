@@ -12,6 +12,26 @@ import threading
 from itertools import repeat
 import signal
 
+def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, compr_threads, obj, dry_run):
+    from cta_relay import s3zstd
+    from cta_relay import gridftp
+    if obj is None:
+        # Find objects that haven't been transited. Since we use compression even on
+        # empty files, only objects whose bodies have been "emptied" can have size==0
+        objects = [bucket.Object(o.key) for o in bucket.objects.all() if o.size > 0]
+    else:
+        objects = [bucket.Object(obj)]
+    print('Un-downloaded keys:', [o.key for o in objects])
+
+    for obj in objects:
+        s3zstd.zdownload(obj, tempdir, compr_threads, dry_run)
+        src_url = 'file://' + os.path.join(tempdir, obj.key)
+        dst_url = gridftp_url + os.path.join(gridftp_path, obj.key)
+        gridftp.copy(src_url, dst_url)
+        os.remove(os.path.join(tempdir, obj.key))
+        if dry_run:
+            continue
+        obj.put(Metadata=obj.metadata) # empty object body
 
 def main():
     parser = argparse.ArgumentParser(
@@ -40,6 +60,8 @@ def main():
             help='directory for (de)compression')
     misc_grp.add_argument('--compr-threads', metavar='N', type=int,
             help='number of threads to use for (de)compression, instead of half of available cores')
+    misc_grp.add_argument('--max-size', metavar='B', type=int,
+            help='skip files or objects larger than this')
 
     s3_grp = parser.add_argument_group('S3 options')
     s3_grp.add_argument('--s3-url', metavar='URL', default='https://rgw.icecube.wisc.edu',
@@ -52,7 +74,7 @@ def main():
             help='S3 secret access key')
     s3_grp.add_argument('--s3-threads', metavar='N', type=int, default=80,
             help='maximum number of S3 transfer threads')
-    s3_grp.add_argument('--multipart-size', metavar='B', type=int, default=2**20,
+    s3_grp.add_argument('--multipart-size', metavar='B', type=int, default=100*2**10,
             help='multipart threshold and chunk size')
     s3_grp.add_argument('--object', metavar='NAME',
             help='operate on specific S3 object only')
@@ -80,22 +102,29 @@ def main():
     bucket.create()
 
     if args.local_to_s3:
-        import cta_relay.s3
+        import cta_relay.s3zstd
         tx_config = TransferConfig(max_concurrency=args.s3_threads,
                                         multipart_threshold=args.multipart_size, 
                                         multipart_chunksize=args.multipart_size)
-        cta_relay.s3.upload(bucket, args.path, args.tempdir, args.compr_threads, tx_config, args.dry_run)
+        if os.path.isfile(args.path):
+            file_info = [(args.path, os.path.getsize(args.path))]
+        else:
+            file_info = [(de.path, de.stat().st_size, de.stat().st_mtime)
+                                    for de in os.scandir(args.path) if de.is_file()]
+        if args.max_size:
+            file_info = [fi for fi in file_info if fi[1] <= args.max_size]
+        cta_relay.s3zstd.zupload(bucket, file_info, args.tempdir, args.compr_threads,
+                                                            tx_config, args.dry_run)
     elif args.s3_to_gridftp:
-        import cta_relay.transit
-        cta_relay.transit.transit(bucket, args.gridftp_url, args.gridftp_path, args.tempdir,
-                                            args.compr_threads, args.object, args.dry_run)
+        s3_to_gridftp(bucket, args.gridftp_url, args.gridftp_path, args.tempdir,
+                                        args.compr_threads, args.object, args.dry_run)
     elif args.gridftp_to_meta:
         import cta_relay.meta
-        cta_relay.meta.bulk_set_metadata(bucket, args.gridftp_url, args.gridftp_path,
+        cta_relay.meta.set(bucket, args.gridftp_url, args.gridftp_path,
                                                     args.gridftp_threads, args.dry_run)
     elif args.show_meta:
         import cta_relay.meta
-        cta_relay.meta.show_metadata(bucket, args.object)
+        cta_relay.meta.show(bucket, args.object)
     else:
         parser.exit('Usage error. Unexpect sub-command.')
 
