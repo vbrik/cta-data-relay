@@ -13,7 +13,7 @@ from functools import partial
 
 class ProgressMeter(object):
     # To simplify, assume this is hooked up to a single operation
-    def __init__(self, label, size, update_interval=3):
+    def __init__(self, label, size, update_interval=5):
         self._label = label
         self._size = size
         self._count = 0

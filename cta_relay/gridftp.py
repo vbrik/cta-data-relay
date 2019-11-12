@@ -39,10 +39,7 @@ def monitor_callback(src, dst, average, instant, transferred, elapsed):
 def copy(src_url, dst_url, overwrite=False):
     ctx = gfal2.creat_context()
     params = ctx.transfer_parameters()
-    params = ctx.transfer_parameters()
     #params.event_callback = event_callback
     params.monitor_callback = monitor_callback
     params.overwrite = overwrite
-    params.checksum_check = False
-    params.timeout = 300
-    r = ctx.filecopy(params, src_url, dst_url)
+    ctx.filecopy(params, src_url, dst_url)
