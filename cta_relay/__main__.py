@@ -16,6 +16,7 @@ def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, compr_threads, obj
     from cta_relay import s3zstd
     from cta_relay import gridftp
     if obj is None:
+        print('Retrieving list of objects')
         # Find objects that haven't been transited. Since we use compression even on
         # empty files, only objects whose bodies have been "emptied" can have size==0
         objects = [bucket.Object(o.key) for o in bucket.objects.all() if o.size > 0]
@@ -24,10 +25,18 @@ def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, compr_threads, obj
     print('Un-downloaded keys:', [o.key for o in objects])
 
     for obj in objects:
+        print('Downloading', obj.key)
         s3zstd.zdownload(obj, tempdir, compr_threads, dry_run)
         src_url = 'file://' + os.path.join(tempdir, obj.key)
         dst_url = gridftp_url + os.path.join(gridftp_path, obj.key)
-        gridftp.copy(src_url, dst_url)
+        print('Uploading', dst_url)
+        try:
+            gridftp.copy(src_url, dst_url)
+        except gridftp.gfal2.GError as e:
+            if e.code == 17:
+                print('Exception:', e)
+            else:
+                raise
         os.remove(os.path.join(tempdir, obj.key))
         if dry_run:
             continue

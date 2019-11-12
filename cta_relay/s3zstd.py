@@ -49,8 +49,8 @@ class ProgressMeter(object):
             return f'{seconds}s'
 
     def __call__(self, num_bytes):
-        now = time.time()
         with self._lock:
+            now = time.time()
             if self._first_time is None:
                 self._first_time = now
                 self._first_count = num_bytes
@@ -69,8 +69,8 @@ class ProgressMeter(object):
                 return
             if t_since_update >= self._update_interval:
                 percent = (self._count / self._size) * 100
-                update_delta = self._count - self._last_update_count
-                update_rate = update_delta / t_since_update
+                update_delta = self._count - self._last_update_count 
+                update_rate = update_delta / t_since_update # XXX why is this negative sometimes?
                 average_rate = self._count / t_observed
                 t_remaining = (self._size - self._count) / average_rate
                 sys.stdout.write(
