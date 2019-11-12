@@ -101,7 +101,6 @@ def main():
         signal.alarm(args.timeout)
     if not os.path.isdir(args.tempdir):
         parser.exit(f'Invalid argument: {args.tempdir} is not a directory')
-    pprint(args)
 
     s3 = boto3.resource('s3', 'us-east-1', endpoint_url=args.s3_url,
             aws_access_key_id=args.access_key_id, aws_secret_access_key=args.secret_access_key)
