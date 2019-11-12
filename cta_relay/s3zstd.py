@@ -89,11 +89,11 @@ def _md5sum(filename):
             d.update(buf)
     return d.hexdigest()
 
-def zdownload(obj, tempdir, threads, dry_run):
+def zdownload(obj, tempdir, dry_run):
     zstd_path = os.path.join(tempdir, obj.key + '.zst')
     obj.download_file(zstd_path, Callback=ProgressMeter(zstd_path, obj.content_length))
-    run(['nice', '-n', '19', 'zstd', '--force', '--decompress', '--rm', '--threads=%s' % threads,
-                                            zstd_path], check=True, stdout=sys.stdout, stderr=PIPE)
+    run(['nice', '-n', '19', 'zstd', '--force', '--decompress', '--rm', zstd_path],
+                                            check=True, stdout=sys.stdout, stderr=PIPE)
 
 def zupload(bucket, file_info, tempdir, threads, tx_config, dry_run=False):
     uploaded_files = set(o.key for o in bucket.objects.all())

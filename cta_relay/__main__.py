@@ -12,7 +12,7 @@ import threading
 from itertools import repeat
 import signal
 
-def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, compr_threads, obj, dry_run):
+def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, obj, dry_run):
     from cta_relay import s3zstd
     from cta_relay import gridftp
     if obj is None:
@@ -26,7 +26,7 @@ def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, compr_threads, obj
 
     for obj in objects:
         print('Downloading', obj.key)
-        s3zstd.zdownload(obj, tempdir, compr_threads, dry_run)
+        s3zstd.zdownload(obj, tempdir, dry_run)
         src_url = 'file://' + os.path.join(tempdir, obj.key)
         dst_url = gridftp_url + os.path.join(gridftp_path, obj.key)
         print('Uploading', dst_url)
@@ -125,7 +125,7 @@ def main():
                                                             tx_config, args.dry_run)
     elif args.s3_to_gridftp:
         s3_to_gridftp(bucket, args.gridftp_url, args.gridftp_path, args.tempdir,
-                                        compr_threads, args.object, args.dry_run)
+                                        args.object, args.dry_run)
     elif args.meta_set_gridftp:
         import cta_relay.meta
         cta_relay.meta.set_gridftp(bucket, args.gridftp_url, args.gridftp_path,
