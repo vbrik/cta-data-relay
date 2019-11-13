@@ -23,6 +23,8 @@ RUN pip3 install boto3 dnspython
 
 RUN yum install -y zstd
 
+RUN yum install -y git dstat
+
 RUN updatedb
 
 WORKDIR /app

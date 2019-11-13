@@ -49,4 +49,5 @@ def copy(src_url, dst_url, overwrite=False):
     #params.event_callback = event_callback
     params.monitor_callback = ProgressMeter().__call__
     params.overwrite = overwrite
+    params.timeout = 3600 * 24 * 7
     ctx.filecopy(params, src_url, dst_url)
