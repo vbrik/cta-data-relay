@@ -50,4 +50,5 @@ def copy(src_url, dst_url, overwrite=False):
     params.monitor_callback = ProgressMeter().__call__
     params.overwrite = overwrite
     params.timeout = 3600 * 24 * 7
+    params.nbstreams = 10 # PaloAlto limits connection data rates to ~600Mbps
     ctx.filecopy(params, src_url, dst_url)
