@@ -118,7 +118,7 @@ def main():
         if os.path.isfile(args.local_path):
             file_info = [(args.local_path, os.path.getsize(args.local_path))]
         else:
-            file_info = [(de.path, de.stat().st_size, de.stat().st_mtime)
+            file_info = [(de.path, de.stat().st_size)
                                     for de in os.scandir(args.local_path) if de.is_file()]
         cta_relay.s3zstd.zupload(bucket, file_info, args.tempdir, compr_threads,
                                                             tx_config, args.dry_run)

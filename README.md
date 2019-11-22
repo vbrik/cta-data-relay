@@ -1,18 +1,32 @@
 # CTA Relay
-This applications relays data from local disk to a GridFTP endpoint via an S3 bucket.
+This applications relays data from local disk to a GridFTP endpoint via an S3 bucket. CTA Relay is designed for an environment with very specific networking restrictions.
 
 "CTA" in CTA Relay refers to the Cherenkov Telescope Array Observatory, the research project for which this application was written to assist with certain data transfers.
 
 # Overview
-CTA Relay is similar to rsync.
+CTA Relay is like a highly-specialized rsync.
+
+It operates roughly as follows:
+
+On the source host:
+1. Build a list of files in a directory
+1. Retrieve a list of files that have been transferred previously from metadata stored in an S3 bucket
+1. Compress and upload to the S3 bucket files that haven't been uploaded previously
+
+On the relay host:
+1. Download unprocessed files from the bucket, decompress them, and upload them to the GridFTP endpoint
+1. Update metadata in S3 bucket to indicate the file has been processed
+
+CTA Relay can also perform various metadata operations, such setting the S3 bucket metadata to reflect what files are already in the GridFTP location (so that they are not re-uploaded).
+
 
 # Installation
 CTA Relay requires Python3 and [zstd](https://facebook.github.io/zstd/) (e.g. `yum install -y zstd`).
 
- git clone https://github.com/vbrik/cta-relay.git
- cd cta-relay
- python3 -m venv .venv
- pip install -r requirements.txt
+    git clone https://github.com/vbrik/cta-relay.git
+    cd cta-relay
+    python3 -m venv .venv
+    pip install -r requirements.txt
 
 Sub-commands that need to connect to a GridFTP server require the [gfal2](https://dmc.web.cern.ch/projects/gfal-2/home) library and its GridFTP plug-in. While not strictly necessary, additional packages are usually needed to use GridFTP in practice. See [Dockerfile](Dockerfile) for GridFTP-related dependencies.
 

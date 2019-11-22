@@ -97,18 +97,18 @@ def zdownload(obj, tempdir, dry_run):
 
 def zupload(bucket, file_info, tempdir, threads, tx_config, dry_run=False):
     uploaded_files = set(o.key for o in bucket.objects.all())
-    unuploaded_files = [(p,s,m) for p,s,m in file_info if basename(p) not in uploaded_files]
+    unuploaded_files = [(p,s) for p,s in file_info if basename(p) not in uploaded_files]
     print('Uploaded:', len(uploaded_files))
     print('Un-uploaded:', len(unuploaded_files),
-            sum(size for name,size,mtime in unuploaded_files)/10**9, 'GB')
+            sum(size for name,size in unuploaded_files)/10**9, 'GB')
     if dry_run:
         return
-    for path,size,mtime in unuploaded_files:
+    for path,size in unuploaded_files:
         zstd_path = os.path.join(tempdir, basename(path) + '.zst')
         run(['nice', '-n', '19', 'zstd', '--force', '--threads=%s' % threads, path, '-o', zstd_path],
                                             check=True, stdout=PIPE, stderr=PIPE)
         md5 = _md5sum(path)
         bucket.upload_file(zstd_path, basename(path), Config=tx_config,
                 Callback=ProgressMeter(zstd_path, os.path.getsize(zstd_path)),
-                ExtraArgs={'Metadata': {'size': str(size), 'mtime': str(mtime), 'md5':md5}})
+                ExtraArgs={'Metadata': {'size': str(size), 'md5':md5}})
         os.remove(zstd_path)

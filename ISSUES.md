@@ -1,6 +1,4 @@
 - tempdir is not cleaned-up
-- gridftp mtime different from original and I don't know how to set it
-    (therefore comparing gridftp and s3 mtimes doesn't make sense)
 - weird performance inssues in kubernetes
     - getting i/o blocked for long time (ceph?)
         - decompress takes a long time
@@ -21,3 +19,5 @@
     There has to be a better way to decouple code and deployment
     - no nice way to test code in k8s though wo creating a
         new container/deployment
+- if a file is created on the gridftp side and then on the source side
+    it will not be overwritten
