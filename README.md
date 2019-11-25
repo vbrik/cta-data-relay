@@ -38,6 +38,9 @@ aws_access_key_id = XXX
 aws_secret_access_key = YYY
 ```
 
+# GridFTP Authentication
+For commands involving GridFTP, x509 authentication is assumed (e.g. using voms-proxy-init or similar tools).
+
 # Usage
 CTA Relay has three modes of operation.
 
@@ -46,5 +49,7 @@ CTA Relay has three modes of operation.
 "S3-to-GridFTP" mode moves data from the S3 bucket to an GridFTP endpoint.
 
 "Metadata" mode allows examining and manipulation of metadata that is stored in S3.
+
+CTA Relay is a python module that can be run as `python3 -m cta_relay ...`.
 
 Run the application with the `--help` flag for more information.

@@ -5,13 +5,12 @@ from pprint import pprint
 import random
 import sys
 
-def _get_gridftp_meta_sizes(origin, path, pool_size, exclude=[]):
+def _get_gridftp_meta_sizes(origin, path, pool_size):
     from cta_relay import gridftp
     from cta_relay.gridftp import DT_REG
-    pool = ThreadPool(pool_size)
     meta = dict((name, {'size':str(stat.st_size)})
-                                    for name,stat in gridftp.ls(origin + path, DT_REG)
-                                        if name not in exclude)
+                                    for name,stat in gridftp.ls(origin + path, DT_REG))
+#    pool = ThreadPool(pool_size)
 #    for url,md5 in pool.imap_unordered(gridftp.md5, urls):
 #        name = basename(url)
 #        meta[name]['md5'] = str(md5)
@@ -24,13 +23,13 @@ def _get_s3_meta_sizes(bucket):
 
 # XXX Currently, only sizes are compared
 def diff_gridftp(bucket, origin, path, pool_size, dry_run):
-    gridftp_meta = _get_gridftp_meta(origin, path, pool_size)
+    gridftp_meta_sizes = _get_gridftp_meta_sizes(origin, path, pool_size)
     s3_meta_sizes = _get_s3_meta_sizes(bucket)
 
     gridftp_names = set(gridftp_meta_sizes.keys())
     s3_names = set(s3_meta_sizes.keys())
-    print('In s3, not in gridftp', [(n, s3_meta_sizes[n]) for n in s3_names - gridftp_names])
-    print('In gridftp, not in s3', [(n, gridftp_meta_sizes[n]) for n in gridftp_names - s3_names])
+    print('Name in s3, not in gridftp', [(n, s3_meta_sizes[n]) for n in s3_names - gridftp_names])
+    print('Name in gridftp, not in s3', [(n, gridftp_meta_sizes[n]) for n in gridftp_names - s3_names])
     common_names = s3_names.intersection(gridftp_names)
     mismatched_meta = []
     for name in common_names:

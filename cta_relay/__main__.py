@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-from pprint import pprint
 import boto3
 from boto3.s3.transfer import TransferConfig
 import os
@@ -77,7 +76,7 @@ def main():
     s3_grp = parser.add_argument_group('S3 options')
     s3_grp.add_argument('--s3-url', metavar='URL', default='https://rgw.icecube.wisc.edu',
             help='S3 endpoint URL')
-    s3_grp.add_argument('--bucket', default='cta-dev',
+    s3_grp.add_argument('--bucket', required=True,
             help='S3 bucket name')
     s3_grp.add_argument('-i', dest='access_key_id',
             help='S3 access key id')
@@ -91,7 +90,7 @@ def main():
     grid_grp = parser.add_argument_group('GridFTP options')
     grid_grp.add_argument('--gridftp-url', metavar='URL', default='gsiftp://gridftp.icecube.wisc.edu',
             help='GridFTP endpoint URL')
-    grid_grp.add_argument('--gridftp-path', metavar='PATH', default='/data/wipac/CTA/cta-sync-test',
+    grid_grp.add_argument('--gridftp-path', metavar='PATH',
             help='GridFTP path')
     grid_grp.add_argument('--gridftp-threads', metavar='NUM', type=int, default=45,
             help='gridftp worker pool size')
@@ -123,10 +122,14 @@ def main():
         cta_relay.s3zstd.zupload(bucket, file_info, args.tempdir, compr_threads,
                                                             tx_config, args.dry_run)
     elif args.s3_to_gridftp:
+        if args.gridftp_path is None:
+            parser.exit(f'Missing required argument --gridftp-path')
         s3_to_gridftp(bucket, args.gridftp_url, args.gridftp_path, args.tempdir,
                                         args.object, args.dry_run)
     elif args.meta_set_gridftp:
         import cta_relay.meta
+        if args.gridftp_path is None:
+            parser.exit(f'Missing required argument --gridftp-path')
         cta_relay.meta.set_gridftp(bucket, args.gridftp_url, args.gridftp_path,
                                                     args.gridftp_threads, args.dry_run)
     elif args.meta_show:
@@ -134,6 +137,8 @@ def main():
         cta_relay.meta.show(bucket, args.object)
     elif args.meta_vs_gridftp:
         import cta_relay.meta
+        if args.gridftp_path is None:
+            parser.exit(f'Missing required argument --gridftp-path')
         cta_relay.meta.diff_gridftp(bucket, args.gridftp_url, args.gridftp_path,
                                                     args.gridftp_threads, args.dry_run)
     else:
