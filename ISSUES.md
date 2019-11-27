@@ -1,3 +1,4 @@
+- when metadata is compared, only sizes are checked
 - tempdir is not cleaned-up
 - hashlib's md5 is pretty slow
 - if gfal2.copy fails in the middle (e.g. error, timeout),
