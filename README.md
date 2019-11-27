@@ -26,6 +26,7 @@ CTA Relay requires Python3 and [zstd](https://facebook.github.io/zstd/) (e.g. `y
     git clone https://github.com/vbrik/cta-relay.git
     cd cta-relay
     python3 -m venv .venv
+    source .venv/bin/activate
     pip install -r requirements.txt
 
 Sub-commands that need to connect to a GridFTP server require the [gfal2](https://dmc.web.cern.ch/projects/gfal-2/home) library and its GridFTP plug-in. While not strictly necessary, additional packages are usually needed to use GridFTP in practice. See [Dockerfile](Dockerfile) for GridFTP-related dependencies.
@@ -50,6 +51,6 @@ CTA Relay has three modes of operation.
 
 "Metadata" mode allows examining and manipulation of metadata that is stored in S3.
 
-CTA Relay is a python module that can be run as `python3 -m cta_relay ...`.
+CTA Relay is a python module that can be run as `python -m cta_relay ...`.
 
 Run the application with the `--help` flag for more information.

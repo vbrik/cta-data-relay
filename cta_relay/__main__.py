@@ -76,7 +76,7 @@ def main():
     s3_grp = parser.add_argument_group('S3 options')
     s3_grp.add_argument('--s3-url', metavar='URL', default='https://rgw.icecube.wisc.edu',
             help='S3 endpoint URL')
-    s3_grp.add_argument('--bucket', required=True,
+    s3_grp.add_argument('-b', '--bucket', required=True,
             help='S3 bucket name')
     s3_grp.add_argument('-i', dest='access_key_id',
             help='S3 access key id')
@@ -114,6 +114,8 @@ def main():
         tx_config = TransferConfig(max_concurrency=args.s3_threads,
                                         multipart_threshold=multipart_size, 
                                         multipart_chunksize=multipart_size)
+        if args.local_path is None:
+            parser.exit(f'Missing required argument --local-path')
         if os.path.isfile(args.local_path):
             file_info = [(args.local_path, os.path.getsize(args.local_path))]
         else:
@@ -141,8 +143,13 @@ def main():
             parser.exit(f'Missing required argument --gridftp-path')
         cta_relay.meta.diff_gridftp(bucket, args.gridftp_url, args.gridftp_path,
                                                     args.gridftp_threads, args.dry_run)
+    elif args.meta_vs_local:
+        import cta_relay.meta
+        if args.local_path is None:
+            parser.exit(f'Missing required argument --local-path')
+        cta_relay.meta.diff_local(bucket, args.local_path)
     else:
-        parser.exit('Usage error. Unexpect sub-command.')
+        parser.exit('Usage error. Unexpected command.')
 
 if __name__ == '__main__':
     sys.exit(main())

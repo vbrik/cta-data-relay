@@ -37,6 +37,23 @@ def diff_gridftp(bucket, origin, path, pool_size, dry_run):
             mismatched_meta.append((name, s3_meta_sizes[name], gridftp_meta_sizes[name]))
     print('Metadata mismatch:', mismatched_meta)
 
+def diff_local(bucket, local_path):
+    local_meta_sizes = dict((de.path, {'size':str(de.stat().st_size)})
+                                    for de in os.scandir(local_path) if de.is_file())
+    s3_meta_sizes = _get_s3_meta_sizes(bucket)
+
+    local_names = set(local_meta_sizes.keys())
+    s3_names = set(s3_meta_sizes.keys())
+    print('Name in s3, not in local', [(n, s3_meta_sizes[n]) for n in s3_names - local_names])
+    print('Name in local, not in s3', [(n, local_meta_sizes[n]) for n in local_names - s3_names])
+    common_names = s3_names.intersection(local_names)
+    mismatched_meta = []
+    for name in common_names:
+        if local_meta_sizes[name] != s3_meta_sizes[name]:
+            mismatched_meta.append((name, s3_meta_sizes[name], local_meta_sizes[name]))
+    print('Metadata mismatch:', mismatched_meta)
+
+
 def set_gridftp(bucket, origin, path, pool_size, dry_run):
     from cta_relay import gridftp
     from cta_relay.gridftp import DT_REG

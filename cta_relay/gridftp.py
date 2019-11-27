@@ -35,6 +35,7 @@ def ls(url, dt_filter=None):
 
 def md5(url):
     ctx = gfal2.creat_context()
+    ctx.transfer_parameters.timeout = 3600 * 24 * 7
     md5 = ctx.checksum(url, 'MD5')
     return (url, md5)
 
