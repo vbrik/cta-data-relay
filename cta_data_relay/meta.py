@@ -38,7 +38,7 @@ def diff_gridftp(bucket, origin, path, pool_size, dry_run):
     print('Metadata mismatch:', mismatched_meta)
 
 def diff_local(bucket, local_path):
-    local_meta_sizes = dict((de.path, {'size':str(de.stat().st_size)})
+    local_meta_sizes = dict((basename(de.path), {'size':str(de.stat().st_size)})
                                     for de in os.scandir(local_path) if de.is_file())
     s3_meta_sizes = _get_s3_meta_sizes(bucket)
 
