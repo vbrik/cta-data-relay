@@ -1,6 +1,6 @@
 #!/bin/bash
 
-container=cta-relay
+container=cta-data-relay
 
 docker kill $container
 sleep 1
@@ -15,6 +15,6 @@ docker run --detach -it --rm --name $container \
         $container:latest
 sleep 1
 docker exec $container voms-proxy-init \
-        -cert /root/.globus/cta-relay-cert.pem \
-        -key /root/.globus/cta-relay-key.pem \
+        -cert /root/.globus/cta-data-relay-cert.pem \
+        -key /root/.globus/cta-data-relay-key.pem \
         -hours 72

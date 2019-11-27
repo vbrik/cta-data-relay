@@ -6,8 +6,8 @@ import random
 import sys
 
 def _get_gridftp_meta_sizes(origin, path, pool_size):
-    from cta_relay import gridftp
-    from cta_relay.gridftp import DT_REG
+    from cta_data_relay import gridftp
+    from cta_data_relay.gridftp import DT_REG
     meta = dict((name, {'size':str(stat.st_size)})
                                     for name,stat in gridftp.ls(origin + path, DT_REG))
 #    pool = ThreadPool(pool_size)
@@ -55,8 +55,8 @@ def diff_local(bucket, local_path):
 
 
 def set_gridftp(bucket, origin, path, pool_size, dry_run):
-    from cta_relay import gridftp
-    from cta_relay.gridftp import DT_REG
+    from cta_data_relay import gridftp
+    from cta_data_relay.gridftp import DT_REG
     uploaded_files = set(o.key for o in bucket.objects.all())
 
     meta = dict((name, {'size':str(stat.st_size)})

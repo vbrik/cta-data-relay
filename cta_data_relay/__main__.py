@@ -12,8 +12,8 @@ from itertools import repeat
 import signal
 
 def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, obj, dry_run):
-    from cta_relay import s3zstd
-    from cta_relay import gridftp
+    from cta_data_relay import s3zstd
+    from cta_data_relay import gridftp
     if obj is None:
         print('Retrieving list of objects')
         # Find objects that haven't been transited. Since we use compression even on
@@ -43,7 +43,7 @@ def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, obj, dry_run):
 
 def main():
     parser = argparse.ArgumentParser(
-            prog='cta-relay',
+            prog='cta-data-relay',
             description='',
             formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(
                                             prog, max_help_position=25, width=90))
@@ -110,7 +110,7 @@ def main():
     multipart_size = 2**20
 
     if args.local_to_s3:
-        import cta_relay.s3zstd
+        import cta_data_relay.s3zstd
         tx_config = TransferConfig(max_concurrency=args.s3_threads,
                                         multipart_threshold=multipart_size, 
                                         multipart_chunksize=multipart_size)
@@ -121,7 +121,7 @@ def main():
         else:
             file_info = [(de.path, de.stat().st_size)
                                     for de in os.scandir(args.local_path) if de.is_file()]
-        cta_relay.s3zstd.zupload(bucket, file_info, args.tempdir, compr_threads,
+        cta_data_relay.s3zstd.zupload(bucket, file_info, args.tempdir, compr_threads,
                                                             tx_config, args.dry_run)
     elif args.s3_to_gridftp:
         if args.gridftp_path is None:
@@ -129,25 +129,25 @@ def main():
         s3_to_gridftp(bucket, args.gridftp_url, args.gridftp_path, args.tempdir,
                                         args.object, args.dry_run)
     elif args.meta_set_gridftp:
-        import cta_relay.meta
+        import cta_data_relay.meta
         if args.gridftp_path is None:
             parser.exit(f'Missing required argument --gridftp-path')
-        cta_relay.meta.set_gridftp(bucket, args.gridftp_url, args.gridftp_path,
+        cta_data_relay.meta.set_gridftp(bucket, args.gridftp_url, args.gridftp_path,
                                                     args.gridftp_threads, args.dry_run)
     elif args.meta_show:
-        import cta_relay.meta
-        cta_relay.meta.show(bucket, args.object)
+        import cta_data_relay.meta
+        cta_data_relay.meta.show(bucket, args.object)
     elif args.meta_vs_gridftp:
-        import cta_relay.meta
+        import cta_data_relay.meta
         if args.gridftp_path is None:
             parser.exit(f'Missing required argument --gridftp-path')
-        cta_relay.meta.diff_gridftp(bucket, args.gridftp_url, args.gridftp_path,
+        cta_data_relay.meta.diff_gridftp(bucket, args.gridftp_url, args.gridftp_path,
                                                     args.gridftp_threads, args.dry_run)
     elif args.meta_vs_local:
-        import cta_relay.meta
+        import cta_data_relay.meta
         if args.local_path is None:
             parser.exit(f'Missing required argument --local-path')
-        cta_relay.meta.diff_local(bucket, args.local_path)
+        cta_data_relay.meta.diff_local(bucket, args.local_path)
     else:
         parser.exit('Usage error. Unexpected command.')
 
