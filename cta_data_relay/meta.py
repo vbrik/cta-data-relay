@@ -53,6 +53,17 @@ def diff_local(bucket, local_path):
             mismatched_meta.append((name, s3_meta_sizes[name], local_meta_sizes[name]))
     print('Metadata mismatch:', mismatched_meta)
 
+def prune_not_in_gridftp(bucket, origin, path, dry_run):
+    from cta_data_relay import gridftp
+    from cta_data_relay.gridftp import DT_REG
+    gridftp_files = [name for name,stat in gridftp.ls(origin + path, DT_REG)]
+    deleted_files = [o.key for o in bucket.objects.all()
+                                    if o.size == 0 and o.key not in gridftp_files]
+    for key in deleted_files:
+        show(bucket, obj=key)
+    if dry_run:
+        return
+    bucket.delete_objects(Delete={'Objects':[{'Key':name} for name in deleted_files]})
 
 def set_gridftp(bucket, origin, path, pool_size, dry_run):
     from cta_data_relay import gridftp

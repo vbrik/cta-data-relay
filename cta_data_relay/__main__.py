@@ -46,7 +46,7 @@ def main():
             prog='cta-data-relay',
             description='',
             formatter_class=lambda prog: argparse.ArgumentDefaultsHelpFormatter(
-                                            prog, max_help_position=25, width=90))
+                                            prog, max_help_position=27, width=90))
     actions_grp = parser.add_argument_group(title='Actions',
             description='(exactly one must be specified)')
     actions_mxgrp = actions_grp.add_mutually_exclusive_group(required=True)
@@ -62,6 +62,8 @@ def main():
             help='Compare S3 metadata vs local storage')
     actions_mxgrp.add_argument('--meta-set-gridftp', action='store_true',
             help='Set S3 metadata to match gridftp storage')
+    actions_mxgrp.add_argument('--meta-prune-to-gridftp', action='store_true',
+            help='Prune from S3 metadata files not in gridftp')
 
     misc_grp = parser.add_argument_group('Miscellaneous options')
     misc_grp.add_argument('--local-path', metavar='PATH',
@@ -76,7 +78,7 @@ def main():
     s3_grp = parser.add_argument_group('S3 options')
     s3_grp.add_argument('--s3-url', metavar='URL', default='https://rgw.icecube.wisc.edu',
             help='S3 endpoint URL')
-    s3_grp.add_argument('-b', '--bucket', required=True,
+    s3_grp.add_argument('-b', '--bucket', metavar='NAME', required=True,
             help='S3 bucket name')
     s3_grp.add_argument('-i', dest='access_key_id',
             help='S3 access key id')
@@ -148,6 +150,12 @@ def main():
         if args.local_path is None:
             parser.exit(f'Missing required argument --local-path')
         cta_data_relay.meta.diff_local(bucket, args.local_path)
+    elif args.meta_prune_to_gridftp:
+        import cta_data_relay.meta
+        if args.gridftp_path is None:
+            parser.exit(f'Missing required argument --gridftp-path')
+        cta_data_relay.meta.prune_not_in_gridftp(bucket, args.gridftp_url,
+                                                    args.gridftp_path, args.dry_run)
     else:
         parser.exit('Usage error. Unexpected command.')
 
