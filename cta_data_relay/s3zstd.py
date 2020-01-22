@@ -74,7 +74,7 @@ class ProgressMeter(object):
                 average_rate = self._count / t_observed
                 t_remaining = (self._size - self._count) / average_rate
                 sys.stdout.write(
-                        f'{self._label: <20} {rt(t_observed)}  '
+                        f'{self._label: <20} {rt(t_observed): <11}  '
                         f'{rs(self._count): >10} / {rs(self._size)} {percent: 3.0f}%  '
                         f'{rs(update_rate)}/s {rs(average_rate)}/s  '
                         f'ETA: {rt(t_remaining)}\n')
@@ -95,7 +95,7 @@ def zdownload(obj, tempdir, dry_run):
     run(['nice', '-n', '19', 'zstd', '--force', '--decompress', '--rm', zstd_path],
                                             check=True, stdout=sys.stdout, stderr=PIPE)
 
-def zupload(bucket, file_info, tempdir, threads, tx_config, dry_run=False):
+def zupload(bucket, file_info, tempdir, threads, tx_config, update_interval, dry_run=False):
     uploaded_files = set(o.key for o in bucket.objects.all())
     unuploaded_files = [(p,s) for p,s in file_info if basename(p) not in uploaded_files]
     print('Uploaded:', len(uploaded_files))
@@ -109,6 +109,6 @@ def zupload(bucket, file_info, tempdir, threads, tx_config, dry_run=False):
                                             check=True, stdout=PIPE, stderr=PIPE)
         md5 = _md5sum(path)
         bucket.upload_file(zstd_path, basename(path), Config=tx_config,
-                Callback=ProgressMeter(zstd_path, os.path.getsize(zstd_path)),
+                Callback=ProgressMeter(basename(zstd_path), os.path.getsize(zstd_path), update_interval),
                 ExtraArgs={'Metadata': {'size': str(size), 'md5':md5}})
         os.remove(zstd_path)

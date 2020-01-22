@@ -88,6 +88,8 @@ def main():
             help='maximum number of S3 transfer threads')
     s3_grp.add_argument('--object', metavar='KEY',
             help='operate on specific S3 object only')
+    s3_grp.add_argument('--s3-stats-freq', metavar='SEC', default=20, type=int,
+            help='frequency of S3 upload progress updates')
 
     grid_grp = parser.add_argument_group('GridFTP options')
     grid_grp.add_argument('--gridftp-url', metavar='URL', default='gsiftp://gridftp.icecube.wisc.edu',
@@ -124,7 +126,7 @@ def main():
             file_info = [(de.path, de.stat().st_size)
                                     for de in os.scandir(args.local_path) if de.is_file()]
         cta_data_relay.s3zstd.zupload(bucket, file_info, args.tempdir, compr_threads,
-                                                            tx_config, args.dry_run)
+                                            tx_config, args.s3_stats_freq, args.dry_run)
     elif args.s3_to_gridftp:
         if args.gridftp_path is None:
             parser.exit(f'Missing required argument --gridftp-path')
