@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 import argparse
-import sys
 import boto3
 from boto3.s3.transfer import TransferConfig
+from operator import itemgetter
 import os
-from os.path import basename
-from subprocess import run, PIPE, CalledProcessError
-import time
-import threading
-from itertools import repeat
 import signal
+import sys
 
 def s3_to_gridftp(bucket, gridftp_url, gridftp_path, tempdir, obj, dry_run):
     from cta_data_relay import s3zstd
@@ -125,6 +121,10 @@ def main():
         else:
             file_info = [(de.path, de.stat().st_size)
                                     for de in os.scandir(args.local_path) if de.is_file()]
+            # Sort to send small files first. This avoids the situation where
+            # a file that is too big to be transferred within the allowed time
+            # permanently blocks files that follow it in the list
+            file_info.sort(key=itemgetter(1))
         cta_data_relay.s3zstd.zupload(bucket, file_info, args.tempdir, compr_threads,
                                             tx_config, args.s3_stats_freq, args.dry_run)
     elif args.s3_to_gridftp:
