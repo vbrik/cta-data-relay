@@ -1,3 +1,5 @@
+This project has been archived. See https://github.com/vbrik/cta-ingest instead.
+
 # CTA Data Relay
 This applications relays data from local disk to a GridFTP endpoint via an S3 bucket. CTA Data Relay is designed for an environment with very specific networking restrictions.
 
